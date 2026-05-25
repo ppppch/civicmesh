@@ -6,6 +6,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     api_env: str = "local"
     api_log_level: str = "info"
+    cors_allow_origins: str = "http://localhost:5173"
+
+    socrata_domain: str = "data.cityofnewyork.us"
+    socrata_app_token: str | None = None
 
     postgres_host: str = "localhost"
     postgres_port: int = 5432

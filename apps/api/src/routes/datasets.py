@@ -3,14 +3,11 @@ from fastapi import APIRouter, Query
 from src.config.settings import get_settings
 from src.services.catalog import CatalogService, build_database_url
 
-router = APIRouter(prefix="/ingest", tags=["ingest"])
+router = APIRouter(prefix="/datasets", tags=["datasets"])
 
 
-@router.post("/catalog", summary="Ingest and score NYC Open Data catalog")
-def ingest_catalog(
-    limit: int = Query(default=200, ge=25, le=1000),
-    top_k: int = Query(default=100, ge=10, le=500),
-) -> dict[str, int | str]:
+@router.get("/search", summary="Search ingested datasets")
+def search_datasets(query: str = Query(min_length=2), limit: int = Query(default=10, ge=1, le=25)) -> dict[str, object]:
     s = get_settings()
     service = CatalogService(
         domain=s.socrata_domain,
@@ -24,10 +21,7 @@ def ingest_catalog(
         ),
     )
 
-    result = service.ingest_catalog(limit=limit, top_k=top_k)
     return {
-        "ingest_run_id": result.ingest_run_id,
-        "datasets_scanned": result.datasets_scanned,
-        "datasets_selected": result.datasets_selected,
-        "status": result.status,
+        "query": query,
+        "results": service.search(query=query, limit=limit),
     }

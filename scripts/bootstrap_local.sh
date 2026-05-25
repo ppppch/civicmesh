@@ -17,9 +17,13 @@ if ! command -v npm >/dev/null 2>&1; then
 fi
 
 [[ -f .env ]] || cp .env.example .env
+[[ -f apps/web/.env ]] || cp apps/web/.env.example apps/web/.env
 
 echo "Starting local infra..."
 docker compose up -d
+
+echo "Applying DB migrations..."
+./scripts/apply_migrations.sh
 
 echo "Syncing API dependencies..."
 (cd apps/api && uv sync)

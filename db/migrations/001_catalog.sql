@@ -18,3 +18,5 @@ CREATE TABLE IF NOT EXISTS datasets_metadata (
 
 CREATE INDEX IF NOT EXISTS idx_datasets_category ON datasets_metadata (category);
 CREATE INDEX IF NOT EXISTS idx_datasets_agency_name ON datasets_metadata (agency_name);
+CREATE INDEX IF NOT EXISTS idx_datasets_tsv ON datasets_metadata
+USING GIN (to_tsvector('english', title || ' ' || COALESCE(description, '') || ' ' || COALESCE(category, '')));

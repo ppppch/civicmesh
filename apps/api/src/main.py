@@ -1,8 +1,10 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from src.config.settings import get_settings
 from src.routes.ask import router as ask_router
 from src.routes.compute import router as compute_router
+from src.routes.datasets import router as datasets_router
 from src.routes.health import router as health_router
 from src.routes.ingest import router as ingest_router
 
@@ -14,9 +16,18 @@ app = FastAPI(
     description="Local-first civic intelligence API for NYC Open Data.",
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[origin.strip() for origin in settings.cors_allow_origins.split(",") if origin.strip()],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(health_router)
 app.include_router(ask_router)
 app.include_router(ingest_router)
+app.include_router(datasets_router)
 app.include_router(compute_router)
 
 

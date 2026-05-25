@@ -51,3 +51,80 @@ header p {
 .card h2 {
   color: var(--accent);
 }
+
+.panel {
+  margin-top: 1.5rem;
+  background: #fffefb;
+  border: 1px solid #d9d3c4;
+  border-radius: 0.9rem;
+  padding: 1rem;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.8rem 0;
+}
+
+button {
+  background: #0c5d7f;
+  color: white;
+  border: 0;
+  border-radius: 0.55rem;
+  padding: 0.55rem 0.9rem;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+label {
+  font-weight: 600;
+  display: block;
+  margin-top: 0.8rem;
+}
+
+textarea {
+  width: 100%;
+  border: 1px solid #c9c2b2;
+  border-radius: 0.55rem;
+  padding: 0.7rem;
+  font: inherit;
+  resize: vertical;
+}
+
+.status {
+  font-size: 0.9rem;
+}
+
+.error {
+  color: #9b1f1f;
+}
+
+.result-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.result-item {
+  border: 1px solid #ded9cc;
+  background: #fffcf5;
+  border-radius: 0.55rem;
+  padding: 0.75rem;
+}
+
+.result-item h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.meta {
+  font-size: 0.9rem;
+  color: #363636;
+}

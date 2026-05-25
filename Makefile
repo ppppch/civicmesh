@@ -20,6 +20,9 @@ web:
 worker:
 	cd apps/worker-sim && uv run python -m src.supervisor
 
+migrate:
+	./scripts/apply_migrations.sh
+
 lint:
 	cd apps/api && uv run ruff check .
 
