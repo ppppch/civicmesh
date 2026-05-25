@@ -1,0 +1,53 @@
+:root {
+  color-scheme: light;
+  --bg: #f7f5ef;
+  --fg: #151515;
+  --card: #fffdf8;
+  --accent: #0c5d7f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  background: radial-gradient(circle at 20% 10%, #e4efe7, transparent 40%), var(--bg);
+  color: var(--fg);
+}
+
+.app {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 3rem 1.25rem;
+}
+
+header h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3rem);
+}
+
+header p {
+  margin-top: 0.6rem;
+  max-width: 70ch;
+}
+
+.grid {
+  margin-top: 2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid #d9d3c4;
+  border-radius: 0.9rem;
+  padding: 1rem;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+}
+
+.card h2 {
+  color: var(--accent);
+}
