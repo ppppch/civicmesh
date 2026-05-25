@@ -12,6 +12,8 @@ CivicGrid NYC is a local-first implementation of AskNYC Compute.
 - Live NYC Open Data catalog ingestion endpoint with scoring + Postgres upsert.
 - Dataset search endpoint over ingested catalog.
 - Firebase Hosting scaffold for free public frontend domain deployment.
+- Required browser-side WebGPU embedding compute before answer retrieval.
+- Client-side persistence of embeddings and run outputs in IndexedDB.
 
 ## Local prerequisites
 
@@ -53,7 +55,15 @@ Web app: http://localhost:5173
 ## First live API flow
 
 1. Run `POST /ingest/catalog` to fetch and score NYC Open Data datasets.
-2. Run `GET /datasets/search?query=...` to retrieve relevant dataset matches.
+2. Frontend runs local WebGPU embedding inference (Transformers.js) for query and candidate rows.
+3. Frontend calls `GET /datasets/search?query=...` then locally reranks by cosine similarity.
+
+## Zero-cloud compute mode
+
+- Inference location: browser only (WebGPU required).
+- Embedding storage: browser IndexedDB database `civicgrid-local`, store `embeddings`.
+- Local run/output storage: browser IndexedDB database `civicgrid-local`, store `runs`.
+- Cloud usage: Firebase Hosting serves static app; API/cloud stores metadata and dataset catalog only.
 
 ## Firebase Hosting deployment (free domain)
 

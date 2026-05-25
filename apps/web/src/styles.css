@@ -96,6 +96,15 @@ textarea {
   resize: vertical;
 }
 
+select {
+  width: 100%;
+  border: 1px solid #c9c2b2;
+  border-radius: 0.55rem;
+  padding: 0.55rem;
+  font: inherit;
+  background: #fff;
+}
+
 .status {
   font-size: 0.9rem;
 }
