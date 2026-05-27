@@ -1,0 +1,26 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    match /embeddings/{version}/{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /models/{version}/{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /run_artifacts/{uid}/{runId}/{allPaths=**} {
+      allow read, write: if isOwner(uid);
+    }
+  }
+}

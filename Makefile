@@ -23,6 +23,27 @@ worker:
 migrate:
 	./scripts/apply_migrations.sh
 
+build-embeddings:
+	cd apps/api && uv run python ../../scripts/build_embeddings.py --max-datasets 60
+
+generate-10k-jobs:
+	curl -sS -X POST "http://localhost:8000/jobs/generated/build?target_count=10000" | cat
+
+generated-jobs:
+	curl -sS "http://localhost:8000/jobs/generated?offset=0&limit=20" | cat
+
+runs-mine:
+	curl -sS "http://localhost:8000/runs/mine?limit=10" -H "Authorization: Bearer local-dev-user" | cat
+
+mobile-flutter:
+	cd apps/mobile_flutter && flutter pub get && flutter run
+
+jobs-list:
+	curl -sS http://localhost:8000/jobs | cat
+
+job-run:
+	curl -sS -X POST "http://localhost:8000/jobs/heat-vulnerability-zones/run?limit=10" | cat
+
 lint:
 	cd apps/api && uv run ruff check .
 

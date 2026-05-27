@@ -6,7 +6,7 @@ type EmbeddingRecord = {
   createdAt: string;
 };
 
-type RunRecord = {
+export type RunRecord = {
   id: string;
   question: string;
   model: string;

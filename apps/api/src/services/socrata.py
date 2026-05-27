@@ -37,7 +37,7 @@ class SocrataClient:
             "only": "datasets",
             "limit": limit,
             "offset": offset,
-            "order": "dataset",
+            "orderBy": "-rowsUpdatedAt",
         }
 
         with httpx.Client(timeout=self.timeout_seconds, headers=headers) as client:

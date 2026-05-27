@@ -6,10 +6,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     api_env: str = "local"
     api_log_level: str = "info"
+    auth_mode: str = "dev"
     cors_allow_origins: str = "http://localhost:5173"
 
     socrata_domain: str = "data.cityofnewyork.us"
     socrata_app_token: str | None = None
+    embedding_artifacts_dir: str = "data/artifacts/embeddings"
+    embedding_model_name: str = "BAAI/bge-small-en-v1.5"
 
     postgres_host: str = "localhost"
     postgres_port: int = 5432

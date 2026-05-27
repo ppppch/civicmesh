@@ -1,13 +1,19 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { runCatalogIngest, searchDatasets, type DatasetSearchResult } from "./api";
+import {
+  publishRun,
+  runCatalogIngest,
+  searchDatasets,
+  type DatasetSearchResult,
+} from "./api";
 import {
   EMBEDDING_MODELS,
   type EmbeddingModel,
   cosineSimilarity,
   embedText,
 } from "./clientCompute";
-import { listRuns, putRun } from "./localStore";
+import { getBearerTokenOrDevToken, listenAuth, signInWithGoogle, signOutUser } from "./firebase";
+import { listRuns, putRun, type RunRecord } from "./localStore";
 import "./styles.css";
 
 function App() {
@@ -19,9 +25,9 @@ function App() {
   const [localComputeStatus, setLocalComputeStatus] = React.useState(
     "Waiting for local GPU compute"
   );
-  const [runs, setRuns] = React.useState<
-    { id: string; question: string; model: string; createdAt: string }[]
-  >([]);
+  const [runs, setRuns] = React.useState<RunRecord[]>([]);
+  const [authEmail, setAuthEmail] = React.useState<string | null>(null);
+  const [publishStatus, setPublishStatus] = React.useState<string>("Not published");
   const [ingestStatus, setIngestStatus] = React.useState<string>("Catalog not ingested yet");
   const [loadingIngest, setLoadingIngest] = React.useState(false);
   const [loadingSearch, setLoadingSearch] = React.useState(false);
@@ -31,6 +37,12 @@ function App() {
     listRuns(5)
       .then((items) => setRuns(items))
       .catch(() => undefined);
+
+    const unsubscribe = listenAuth((user) => {
+      setAuthEmail(user?.email ?? null);
+    });
+
+    return unsubscribe;
   }, []);
 
   async function handleIngestClick() {
@@ -95,11 +107,53 @@ function App() {
     }
   }
 
+  async function handlePublish(run: RunRecord) {
+    setError(null);
+    setPublishStatus("Publishing run...");
+    try {
+      const token = await getBearerTokenOrDevToken();
+      const result = await publishRun(
+        {
+          run_id: run.id,
+          question: run.question,
+          model_name: run.model,
+          embedding_key: run.queryEmbeddingKey,
+          selected_dataset_ids: run.selectedDatasetIds,
+          result_payload: {
+            question: run.question,
+            selected_dataset_ids: run.selectedDatasetIds,
+            created_at: run.createdAt,
+          },
+        },
+        token
+      );
+      setPublishStatus(`Published ${result.run_id} at ${result.created_on_ts ?? "unknown time"}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Publish failed");
+      setPublishStatus("Publish failed");
+    }
+  }
+
   return (
     <main className="app">
       <header>
         <h1>CivicGrid NYC</h1>
         <p>Ask NYC. Contribute compute. Publish reproducible insight cards.</p>
+        <div className="controls">
+          {authEmail ? (
+            <>
+              <span className="status">Signed in: {authEmail}</span>
+              <button type="button" onClick={() => void signOutUser()}>
+                Sign out
+              </button>
+            </>
+          ) : (
+            <button type="button" onClick={() => void signInWithGoogle()}>
+              Sign in with Google
+            </button>
+          )}
+          <span className="status">{publishStatus}</span>
+        </div>
       </header>
 
       <section className="panel">
@@ -168,6 +222,9 @@ function App() {
               <p className="meta">
                 {run.model} | {new Date(run.createdAt).toLocaleString()}
               </p>
+              <button type="button" onClick={() => void handlePublish(run)}>
+                Publish to Firebase-backed API
+              </button>
             </li>
           ))}
         </ul>

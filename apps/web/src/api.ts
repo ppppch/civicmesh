@@ -11,6 +11,15 @@ export type DatasetSearchResult = {
   source_url: string;
 };
 
+export type PublishRunRequest = {
+  run_id: string;
+  question: string;
+  model_name: string;
+  embedding_key: string;
+  selected_dataset_ids: string[];
+  result_payload: Record<string, unknown>;
+};
+
 export async function runCatalogIngest(limit: number, topK: number): Promise<{
   ingest_run_id: string;
   datasets_scanned: number;
@@ -41,4 +50,25 @@ export async function searchDatasets(query: string): Promise<DatasetSearchResult
 
   const payload = (await response.json()) as { results: DatasetSearchResult[] };
   return payload.results;
+}
+
+export async function publishRun(
+  payload: PublishRunRequest,
+  bearerToken: string
+): Promise<{ run_id: string; user_id: string; created: boolean; created_on_ts: string | null }> {
+  const url = `${API_BASE_URL}/runs/publish`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${bearerToken}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Publish failed with status ${response.status}`);
+  }
+
+  return response.json();
 }
