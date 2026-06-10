@@ -16,9 +16,9 @@ class Settings(BaseSettings):
 
     postgres_host: str = "localhost"
     postgres_port: int = 5432
-    postgres_db: str = "civicgrid"
-    postgres_user: str = "civicgrid"
-    postgres_password: str = "civicgrid"
+    postgres_db: str = "civicmesh"
+    postgres_user: str = "civicmesh"
+    postgres_password: str = "civicmesh"
 
     redis_host: str = "localhost"
     redis_port: int = 6379

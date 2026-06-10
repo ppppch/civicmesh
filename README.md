@@ -1,36 +1,59 @@
 # CivicGrid NYC
 
-CivicGrid NYC is a zero-cloud-inference civic intelligence platform focused on NYC Open Data.
+CivicGrid NYC is a local-first civic forecasting platform focused on NYC 311 Open Data.
 
-The core idea is simple:
+The simplified core idea is:
 
-- User devices do the actual model inference and civic analysis.
-- Cloud services only host artifacts, metadata, auth, and published outputs.
-- Every published result is reproducible, versioned, and traceable to source data.
+- Embed 2025 NYC 311 complaint signals by complaint type and ZIP code.
+- Train three forecast model variants (Random Forest, XGBoost, LightGBM).
+- Predict 2026 complaint totals for each complaint type in each ZIP code.
+- Compare model quality side-by-side and keep predictions reproducible.
 
 This repository is the implementation workspace for that final product.
 
-## Final Product Goal
+## Simplified Product Goal
 
-The final product has four connected surfaces:
+The product now centers on one forecasting workflow:
 
-1. Ask NYC
-- Ask civic questions in natural language.
-- Retrieve and rerank NYC datasets against precomputed NYC corpus embeddings stored locally.
-- Produce transparent, citation-ready outputs.
+1. Build embedding features from 311 complaint rows grouped by ZIP + complaint type.
+2. Train/evaluate Random Forest, XGBoost, and LightGBM on historical year-pairs.
+3. Run next-year inference from 2025 rows to predict 2026 totals per ZIP + complaint type.
+4. Return leaderboard metrics and per-model prediction outputs.
 
-2. Jobs
-- Browse deterministic civic job templates.
-- Run jobs locally on user devices.
-- Publish reproducible run artifacts.
+## Delivery Order (Explicit)
 
-3. Insight Atlas
-- Explore public, published run summaries.
-- Filter by topic, geography, method, and confidence.
+Implementation sequence is fixed:
 
-4. Civic Compute
-- Show contribution stats and verification status.
-- Make local compute participation visible and trustworthy.
+1. Web app first (Vite/React).
+2. Flutter + ONNX + Swift bridge second, after web parity is complete.
+
+### Phase 1: Web App First
+
+1. Connect web UI to POST /forecast311/train-and-predict.
+2. Add upload/import flow for 311 yearly rows (ZIP, complaint type, year, count).
+3. Run model comparison view (Random Forest, XGBoost, LightGBM) with MAE/RMSE table.
+4. Add prediction table for 2026 counts by ZIP + complaint type, filterable and exportable.
+5. Add reproducibility panel showing model config, source year, target year, and run timestamp.
+
+### Phase 2: Flutter + ONNX + Swift Bridge Later
+
+1. Freeze web model interface contract (request/response schema and feature rules).
+2. Convert trained model artifacts to ONNX and validate parity against web outputs.
+3. Build Swift bridge for ONNX Runtime and expose typed APIs to Flutter.
+4. Implement Flutter screens matching web behavior and metrics.
+5. Run parity suite to confirm Flutter predictions stay within acceptable tolerance from web baseline.
+
+## Manual Human Tasks (Required)
+
+The following steps cannot be fully automated and must be done by humans:
+
+1. Select and approve the exact NYC 311 complaint taxonomy and ZIP normalization rules for 2025.
+2. Verify and clean raw data edge cases (missing ZIPs, invalid ZIP formats, merged complaint labels).
+3. Decide acceptance thresholds for model quality (minimum MAE/RMSE targets).
+4. Review model outputs for civic reasonableness before publishing any forecast externally.
+5. Approve which model variant becomes default after comparison (or keep all three visible).
+6. Perform legal/policy review on public-facing forecast messaging and caveat language.
+7. Run release sign-off after manual QA on key ZIP + complaint slices.
 
 ## Non-Negotiable Constraints
 
@@ -45,7 +68,7 @@ Current implementation status in this repo:
 
 - Monorepo with API, web app, worker simulator, mobile app, and DB migrations.
 - Local infrastructure via Docker Compose (Postgres/PostGIS, Redis, Qdrant).
-- FastAPI service with ingestion, search, jobs, run publish, and embedding build endpoints.
+- FastAPI service with ingestion, embedding build, and 311 forecast training/prediction endpoints.
 - Web app (Vite + React + TypeScript) with local embedding compute and IndexedDB local run history.
 - Deterministic job recipes plus generated job catalog (10,000+ target).
 - Firebase Hosting/Auth scaffolding and deployment scripts.
@@ -151,6 +174,7 @@ Endpoints:
 - GET /jobs/generated
 - GET /jobs/generated/{job_id}
 - POST /embeddings/build
+- POST /forecast311/train-and-predict
 - POST /runs/publish
 - GET /runs/mine
 
@@ -194,10 +218,10 @@ firebase deploy --only firestore:rules,firestore:indexes,storage
 
 Near-term priorities:
 
-- Harden Socrata ingestion and normalized dataset profiling.
-- Complete artifact version activation flow for embeddings/models.
-- Add public atlas feed endpoints and frontend explorer.
-- Add verification layers (replica reruns, consensus scores, gold tasks).
-- Strengthen production auth verification, rate limits, and schema versioning.
+- Harden 311 ingestion and ZIP/complaint-type normalization.
+- Persist 2025 embedding artifacts and model outputs with explicit versioning.
+- Add training data QA checks (missing ZIPs, sparse complaint classes, outliers).
+- Add offline batch training script and reproducible model registry metadata.
+- Expose simple forecast explorer views in web/mobile clients.
 
 Reference planning document: plan.md

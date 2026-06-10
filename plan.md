@@ -1,5 +1,45 @@
 # CivicGrid NYC Master Plan
 
+## Active Simplified Scope (Current)
+
+This repository is currently prioritizing a narrower execution path:
+
+1. Build 2025 embeddings for NYC 311 complaint data keyed by ZIP code and complaint type.
+2. Train three supervised models for next-year totals: Random Forest, XGBoost, and LightGBM.
+3. Predict 2026 complaint counts for each ZIP + complaint-type pair from 2025 source rows.
+4. Compare model performance with consistent MAE/RMSE metrics and keep outputs reproducible.
+
+All other product surfaces remain optional until this forecast workflow is stable.
+
+## Execution Order And Human Gates
+
+### Phase A (Web-First Delivery)
+
+1. Ship web ingestion/import UX for 311 yearly counts.
+2. Ship web-triggered training/inference against /forecast311/train-and-predict.
+3. Ship model comparison leaderboard (Random Forest, XGBoost, LightGBM).
+4. Ship ZIP + complaint forecast explorer for 2026 predictions.
+
+Human gates in Phase A:
+
+1. Data steward approves final 2025 cleanup rules before training runs.
+2. Product owner approves MAE/RMSE success thresholds.
+3. Domain reviewer signs off that top forecasts are plausible and caveated.
+
+### Phase B (Flutter + ONNX + Swift Bridge)
+
+1. Lock web schema and feature contract.
+2. Export candidate model artifacts to ONNX.
+3. Implement Swift ONNX runtime bridge and expose Flutter bindings.
+4. Recreate web forecasting UX in Flutter with matching filters/metrics.
+5. Run parity testing against web baseline outputs.
+
+Human gates in Phase B:
+
+1. Mobile engineer validates bridge memory/performance on target iOS devices.
+2. QA validates parity tolerances and edge-case behavior.
+3. Release owner approves mobile rollout after manual exploratory testing.
+
 ## 1. Vision And Non-Negotiables
 
 CivicGrid NYC is a zero-cloud-inference civic intelligence platform:
