@@ -12,7 +12,7 @@
       "training_rows": 1145,
       "validation_rows": 378,
       "onnx_file": "random-forest.onnx",
-      "checksum": "sha256:1f2af854b01a119f672aef2c32a2861d86ea3718e4e51d23a75a2de77eb22cdc"
+      "checksum": "sha256:8bf9b7dc579a6d74e2bc08cf2b35bd323d6055f8ffcd3f095985eaf5ab0f08fc"
     },
     {
       "model_name": "xgboost",
@@ -26,7 +26,7 @@
       "training_rows": 1145,
       "validation_rows": 378,
       "onnx_file": "xgboost.onnx",
-      "checksum": "sha256:45787553ee525c8565a16700d3baae522a0e3c509b440e7b0bb21ccbbe6ca02c"
+      "checksum": "sha256:141dd120b33ff49fb6c0126ceb24af750bec8b2f47a57122b9f06a569c61fe55"
     },
     {
       "model_name": "lightgbm",
@@ -40,7 +40,7 @@
       "training_rows": 1145,
       "validation_rows": 378,
       "onnx_file": "lightgbm.onnx",
-      "checksum": "sha256:4ffda335d1c8ae2dc646406d70216a72a9719d4c6bcab9c106b441cd10316810"
+      "checksum": "sha256:dd201eb56d34408b88263a30d5460786bba2a869e7c3108d2b09057a0a6cb479"
     }
   ]
 }
