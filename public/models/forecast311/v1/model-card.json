@@ -1,0 +1,46 @@
+{
+  "models": [
+    {
+      "model_name": "random_forest",
+      "model_version": "random-forest-2026-v1",
+      "feature_schema_version": "forecast-features-v1",
+      "embedding_version": "311-embed-v1",
+      "mae": 292.7368,
+      "rmse": 743.5516,
+      "train_mae": 84.4762,
+      "train_rmse": 231.2826,
+      "training_rows": 1145,
+      "validation_rows": 378,
+      "onnx_file": "random-forest.onnx",
+      "checksum": "sha256:1f2af854b01a119f672aef2c32a2861d86ea3718e4e51d23a75a2de77eb22cdc"
+    },
+    {
+      "model_name": "xgboost",
+      "model_version": "xgboost-2026-v1",
+      "feature_schema_version": "forecast-features-v1",
+      "embedding_version": "311-embed-v1",
+      "mae": 303.9329,
+      "rmse": 753.3887,
+      "train_mae": 4.993,
+      "train_rmse": 6.8301,
+      "training_rows": 1145,
+      "validation_rows": 378,
+      "onnx_file": "xgboost.onnx",
+      "checksum": "sha256:45787553ee525c8565a16700d3baae522a0e3c509b440e7b0bb21ccbbe6ca02c"
+    },
+    {
+      "model_name": "lightgbm",
+      "model_version": "lightgbm-2026-v1",
+      "feature_schema_version": "forecast-features-v1",
+      "embedding_version": "311-embed-v1",
+      "mae": 301.257,
+      "rmse": 679.4697,
+      "train_mae": 66.7818,
+      "train_rmse": 254.0874,
+      "training_rows": 1145,
+      "validation_rows": 378,
+      "onnx_file": "lightgbm.onnx",
+      "checksum": "sha256:4ffda335d1c8ae2dc646406d70216a72a9719d4c6bcab9c106b441cd10316810"
+    }
+  ]
+}
