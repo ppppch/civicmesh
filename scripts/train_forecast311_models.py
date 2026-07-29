@@ -2,7 +2,6 @@
 """Train 311 forecast models and export them to ONNX.
 
 Usage:
-    cd /Users/ritikasubedi/civicmesh
     uv run --project apps/api python scripts/train_forecast311_models.py \
         --release-dir artifacts/forecast311/releases/20260729-022708
 """
@@ -26,7 +25,6 @@ from xgboost import XGBRegressor
 from lightgbm import LGBMRegressor
 
 
-RELEASE_DIR = Path("artifacts/forecast311/releases/20260729-022708")
 OUTPUT_DIR = Path("public/models/forecast311/v1")
 FEATURE_SCHEMA_PATH = Path("apps/api/src/data/forecast-features-v1.json")
 
@@ -195,7 +193,7 @@ def evaluate_model(model: Any, x: np.ndarray, y: np.ndarray) -> dict[str, float]
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Train 311 forecast models and export to ONNX")
-    parser.add_argument("--release-dir", type=Path, default=RELEASE_DIR)
+    parser.add_argument("--release-dir", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, default=OUTPUT_DIR)
     args = parser.parse_args()
 
