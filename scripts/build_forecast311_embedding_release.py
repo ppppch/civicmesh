@@ -179,21 +179,25 @@ def build_feature_record(
     return record
 
 
-def load_and_clean_rows(csv_path: Path, source_year: int) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+def load_and_clean_rows(
+	csv_path: Path, 
+	min_year: int,
+	max_year: int,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     con = duckdb.connect()
     con.execute(f"""
         CREATE OR REPLACE VIEW nyc311 AS
         SELECT
-            strptime("Created Date", '%m/%d/%Y %I:%M:%S %p') AS created_ts,
-            "Problem (formerly Complaint Type)" AS complaint_type,
-            "Incident Zip" AS incident_zip
+            cast("created_date" as date) AS created_ts,
+            "complaint_type" AS complaint_type,
+            "incident_zip" AS incident_zip
         FROM read_csv_auto('{csv_path}', header=true, all_varchar=true)
     """)
 
     query = f"""
         SELECT incident_zip, complaint_type, YEAR(created_ts) AS y, COUNT(*) AS n
         FROM nyc311
-        WHERE YEAR(created_ts) BETWEEN {source_year - 2} AND {source_year}
+        WHERE YEAR(created_ts) BETWEEN {min_year} AND {max_year}
         GROUP BY incident_zip, complaint_type, YEAR(created_ts)
     """
     raw_rows = con.execute(query).fetchall()
@@ -262,32 +266,35 @@ def build_release_artifacts(
     *,
     csv_path: Path,
     output_dir: Path,
-    source_year: int,
+    source_years: list[int],
     embedding_dim: int,
     release_id: str,
 ) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    cleaned_rows, rejected_rows = load_and_clean_rows(csv_path, source_year)
+    min_year = min(source_years) - 2
+    max_year = max(source_years)
+    cleaned_rows, rejected_rows = load_and_clean_rows(csv_path, min_year, max_year)
     series = aggregate_series(cleaned_rows)
 
     records_path = output_dir / "embedding_records.jsonl"
     records: list[dict[str, Any]] = []
 
     with records_path.open("w", encoding="utf-8") as fh:
-        for (zipcode, complaint_type), yearly_counts in sorted(series.items()):
-            if source_year not in yearly_counts:
-                continue
+        for source_year in sorted(source_years):
+            for (zipcode, complaint_type), yearly_counts in sorted(series.items()):
+                if source_year not in yearly_counts:
+                    continue
 
-            record = build_feature_record(
-                zipcode=zipcode,
-                complaint_type=complaint_type,
-                source_year=source_year,
-                yearly_counts=yearly_counts,
-                embedding_dim=embedding_dim,
-            )
-            records.append(record)
-            fh.write(json.dumps(record, ensure_ascii=False) + "\n")
+                record = build_feature_record(
+                    zipcode=zipcode,
+                    complaint_type=complaint_type,
+                    source_year=source_year,
+                    yearly_counts=yearly_counts,
+                    embedding_dim=embedding_dim,
+                )
+                records.append(record)
+                fh.write(json.dumps(record, ensure_ascii=False) + "\n")
 
     # Validate quantization parity for a sample of records.
     parity_errors = 0
@@ -322,8 +329,8 @@ def build_release_artifacts(
         "feature_schema_version": FEATURE_SCHEMA_VERSION,
         "embedding_model": EMBEDDING_MODEL,
         "embedding_dimension": embedding_dim,
-        "source_year": source_year,
-        "target_year": source_year + 1,
+        "source_years": source_years,
+        "target_year": max(source_years) + 1,
         "record_count": len(records),
         "records_path": str(records_path),
         "generated_at": datetime.now(tz=UTC).isoformat(),
@@ -342,7 +349,7 @@ def build_release_artifacts(
         ),
         "year_coverage": {
             str(year): sum(1 for r in records if r["source_year"] == year)
-            for year in [source_year]
+            for year in source_years
         },
         "quantization_parity_errors": parity_errors,
         "outlier_threshold": round(outlier_threshold, 2),
@@ -365,7 +372,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Build Phase 2A 311 embedding release")
     parser.add_argument("--input", type=Path, default=CSV_PATH)
     parser.add_argument("--output", type=Path, default=OUTPUT_ROOT)
-    parser.add_argument("--source-year", type=int, default=2025)
+    parser.add_argument(
+        "--source-years", 
+        type=int, 
+        nargs="+",
+        default=[2021, 2022, 2023, 2024, 2025],
+        help="Source years to generate embedding records for",
+    )
     parser.add_argument("--embedding-dim", type=int, default=32)
     parser.add_argument(
         "--release-id",
@@ -378,7 +391,7 @@ def main() -> None:
     build_release_artifacts(
         csv_path=args.input,
         output_dir=output_dir,
-        source_year=args.source_year,
+        source_years=args.source_years,
         embedding_dim=args.embedding_dim,
         release_id=args.release_id,
     )
