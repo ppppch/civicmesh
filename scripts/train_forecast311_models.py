@@ -3,7 +3,7 @@
 
 Usage:
     uv run --project apps/api python scripts/train_forecast311_models.py \
-        --release-dir artifacts/forecast311/releases/20260728-164958
+        --release-dir artifacts/forecast311/releases/20260729-022708
 """
 from __future__ import annotations
 
