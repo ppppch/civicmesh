@@ -8,6 +8,8 @@ export type LocalInferenceResult = {
   modelVersion: string;
   modelChecksum: string;
   executionProvider: string;
+  mae: number;
+  rmse: number;
 };
 
 export async function runLocalInference(
@@ -37,6 +39,8 @@ export async function runLocalInference(
       modelVersion: artifact.version,
       modelChecksum: artifact.checksum,
       executionProvider: artifact.executionProvider,
+      mae: artifact.mae,
+      rmse: artifact.rmse,
     };
   } catch (err) {
     throw new ForecastInferenceError(modelName, err);

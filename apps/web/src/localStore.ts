@@ -27,12 +27,14 @@ export type ForecastResultRecord = {
   prediction: number;
   modelName: string;
   modelVersion: string;
+  mae: number;
+  rmse: number;
   provenance: Provenance;
   createdAt: string;
 };
 
 const DB_NAME = "civicgrid-local";
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 const EMBEDDINGS_STORE = "embeddings";
 const RUNS_STORE = "runs";
 const FORECAST_EMBEDDINGS_STORE = "forecastEmbeddings";

@@ -29,6 +29,7 @@ const firebaseEnabled = Boolean(firebaseConfig.apiKey && firebaseConfig.projectI
 const app = firebaseEnabled ? initializeApp(firebaseConfig) : null;
 const auth: Auth | null = app ? getAuth(app) : null;
 const db: Firestore | null = app ? getFirestore(app) : null;
+const forecastDb: Firestore | null = app ? getFirestore(app, "nycdata") : null;
 const provider = auth ? new GoogleAuthProvider() : null;
 
 export function listenAuth(callback: (user: User | null) => void): () => void {
@@ -71,6 +72,10 @@ export async function getBearerTokenOrDevToken(): Promise<string> {
 
 export function getDb(): Firestore | null {
   return db;
+}
+
+export function getForecastDb(): Firestore | null {
+  return forecastDb;
 }
 
 export function isFirebaseConfigured(): boolean {

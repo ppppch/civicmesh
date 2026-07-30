@@ -2,6 +2,14 @@ import { describe, expect, it } from "vitest";
 import { decodeEmbedding } from "./embeddingDecoder";
 import { buildFeatureVector, type EmbeddingRecord } from "./featureBuilder";
 import { buildRecordId } from "./firestoreEmbeddingRepository";
+import {
+  ForecastChecksumError,
+  ForecastFirestoreUnavailableError,
+  ForecastModelLoadError,
+  ForecastRecordNotFoundError,
+  ForecastVersionMismatchError,
+  getForecastUserMessage,
+} from "./forecastErrors";
 
 describe("embeddingDecoder", () => {
   it("decodes an int8-scale base64 vector", () => {
@@ -85,5 +93,57 @@ describe("firestoreEmbeddingRepository", () => {
     expect(id1).toBe(id2); // normalization should make these equal
     expect(id1).toMatch(/^2025_10027_[a-f0-9]{16}$/);
     expect(id3).not.toBe(id1);
+  });
+});
+
+describe("forecastErrors user messages", () => {
+  it("returns a clear message for a missing record", () => {
+    const message = getForecastUserMessage(
+      new ForecastRecordNotFoundError("10027", "Heat/Hot Water", 2025)
+    );
+    expect(message).toContain("No precomputed embedding found");
+  });
+
+  it("returns a clear message for a version mismatch", () => {
+    const message = getForecastUserMessage(
+      new ForecastVersionMismatchError("feature_schema", "v1", "v2")
+    );
+    expect(message).toContain("incompatible");
+  });
+
+  it("returns a clear message for a checksum failure", () => {
+    const message = getForecastUserMessage(new ForecastChecksumError("bad checksum"));
+    expect(message).toContain("integrity verification");
+  });
+
+  it("returns a clear message for a model load failure", () => {
+    const message = getForecastUserMessage(
+      new ForecastModelLoadError("random_forest", "network error")
+    );
+    expect(message).toContain("could not be loaded");
+  });
+
+  it("returns a clear message when Firestore is unavailable", () => {
+    const message = getForecastUserMessage(new ForecastFirestoreUnavailableError());
+    expect(message).toContain("Firestore is not configured");
+  });
+});
+
+describe("Phase 2 forecast isolation", () => {
+  it("does not import the browser embedding runtime in any forecast module", async () => {
+    const modules = [
+      await import("./embeddingDecoder"),
+      await import("./featureBuilder"),
+      await import("./firestoreEmbeddingRepository"),
+      await import("./forecastErrors"),
+      await import("./forecastService"),
+      await import("./localInference"),
+      await import("./modelRegistry"),
+      await import("./provenance"),
+      await import("./releaseManifest"),
+    ];
+    for (const mod of modules) {
+      expect(mod).not.toHaveProperty("embedText");
+    }
   });
 });

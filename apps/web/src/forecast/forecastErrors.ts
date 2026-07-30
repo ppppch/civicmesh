@@ -46,6 +46,15 @@ export class ForecastInferenceError extends Error {
   }
 }
 
+export class ForecastFirestoreUnavailableError extends Error {
+  constructor() {
+    super(
+      "Firestore is not configured. Forecasting requires a configured Firebase project and a published embedding release."
+    );
+    this.name = "ForecastFirestoreUnavailableError";
+  }
+}
+
 export function getForecastUserMessage(error: unknown): string {
   if (error instanceof ForecastRecordNotFoundError) {
     return `No precomputed embedding found for ${error.zipcode} / ${error.complaintType} / ${error.sourceYear}. It may not be included in this release.`;
@@ -61,6 +70,9 @@ export function getForecastUserMessage(error: unknown): string {
   }
   if (error instanceof ForecastInferenceError) {
     return `The local prediction failed. Your browser may not support the required runtime.`;
+  }
+  if (error instanceof ForecastFirestoreUnavailableError) {
+    return `Forecasting is unavailable because Firestore is not configured. Please contact support.`;
   }
   if (error instanceof Error) {
     return error.message;

@@ -135,6 +135,17 @@ def compute_checksum(record: dict[str, Any]) -> str:
     return f"sha256:{digest}"
 
 
+def _normalize_number(value: Any) -> Any:
+    """Convert whole-number floats to ints so Python/JS JSON serialization matches."""
+    if isinstance(value, float) and value.is_integer():
+        return int(value)
+    if isinstance(value, dict):
+        return {k: _normalize_number(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_normalize_number(v) for v in value]
+    return value
+
+
 def build_feature_record(
     zipcode: str,
     complaint_type: str,
@@ -161,7 +172,7 @@ def build_feature_record(
     embedding_vec = generate_embedding(zipcode, complaint_type, embedding_dim)
     embedding_payload = quantize_vector(embedding_vec)
 
-    record: dict[str, Any] = {
+    record: dict[str, Any] = _normalize_number({
         "schema_version": SCHEMA_VERSION,
         "dataset_version": DATASET_VERSION,
         "embedding_version": EMBEDDING_VERSION,
@@ -173,7 +184,7 @@ def build_feature_record(
         "trend_features": trend_features,
         "embedding": embedding_payload,
         "generated_at": datetime.now(tz=UTC).isoformat(),
-    }
+    })
 
     record["checksum"] = compute_checksum(record)
     return record
