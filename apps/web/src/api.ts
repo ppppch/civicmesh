@@ -1,4 +1,5 @@
 import { getFeaturedDatasetFromFirestore } from "./firebase";
+import { MOCK_FEATURED_DATASET } from "./mockFeaturedDataset";
 
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.trim() || "http://localhost:8000";
@@ -77,52 +78,21 @@ export async function getFeaturedDataset(): Promise<FeaturedDataset> {
     return fromFirestore;
   }
 
-  const url = `${API_BASE_URL}/datasets/featured`;
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Featured dataset failed with status ${response.status}`);
+  try {
+    const url = `${API_BASE_URL}/datasets/featured`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Featured dataset failed with status ${response.status}`);
+    }
+    const payload = (await response.json()) as { featured: FeaturedDataset };
+    return payload.featured;
+  } catch (err) {
+    console.warn(
+      "[api] Failed to load featured dataset from API. Using mock dataset for local development:",
+      err
+    );
+    return MOCK_FEATURED_DATASET;
   }
-  const payload = (await response.json()) as { featured: FeaturedDataset };
-  return payload.featured;
-}
-
-export type ForecastPrediction = {
-  zipcode: string;
-  complaint_type: string;
-  source_year: number;
-  target_year: number;
-  source_count: number;
-  predicted_count: number;
-};
-
-export type ForecastResult = {
-  source_year: number;
-  target_year: number;
-  model_comparison: {
-    model_name: string;
-    mae: number;
-    rmse: number;
-    trained_on_rows: number;
-    validation_rows: number;
-  }[];
-  predictions: Record<string, ForecastPrediction[]>;
-};
-
-export async function runForecast311(rows: FeaturedDataset["rows"]): Promise<ForecastResult> {
-  const url = `${API_BASE_URL}/forecast311/train-and-predict`;
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      rows,
-      source_year: 2025,
-      target_year: 2026,
-    }),
-  });
-  if (!response.ok) {
-    throw new Error(`Forecast failed with status ${response.status}`);
-  }
-  return response.json() as Promise<ForecastResult>;
 }
 
 export async function publishRun(
