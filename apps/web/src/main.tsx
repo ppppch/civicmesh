@@ -4,7 +4,6 @@ import {
   getFeaturedDataset,
   publishRun,
   runCatalogIngest,
-  runForecast311,
   searchDatasets,
   type DatasetSearchResult,
   type FeaturedDataset,
@@ -15,9 +14,18 @@ import {
   cosineSimilarity,
   embedText,
 } from "./clientCompute";
-import { getBearerTokenOrDevToken, listenAuth, signInWithGoogle, signOutUser } from "./firebase";
+import { ACTIVE_RELEASE } from "./forecast/releaseManifest";
+import {
+  runLocalForecast,
+  type ForecastServiceResult,
+} from "./forecast/forecastService";
+import { getForecastUserMessage } from "./forecast/forecastErrors";
+import { getBearerTokenOrDevToken, isFirebaseConfigured, listenAuth, signInWithGoogle, signOutUser } from "./firebase";
 import { listRuns, putRun, type RunRecord } from "./localStore";
 import "./styles.css";
+
+const FORECAST_MODELS = ["random_forest", "xgboost", "lightgbm"] as const;
+type ForecastModelName = (typeof FORECAST_MODELS)[number];
 
 function App() {
   const [question, setQuestion] = React.useState(
@@ -36,7 +44,8 @@ function App() {
   const [loadingSearch, setLoadingSearch] = React.useState(false);
   const [featured, setFeatured] = React.useState<FeaturedDataset | null>(null);
   const [loadingFeatured, setLoadingFeatured] = React.useState(false);
-  const [forecast, setForecast] = React.useState<ForecastResult | null>(null);
+  const [forecast, setForecast] = React.useState<ForecastServiceResult | null>(null);
+  const [forecastModel, setForecastModel] = React.useState<ForecastModelName>("random_forest");
   const [loadingForecast, setLoadingForecast] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -85,10 +94,23 @@ function App() {
     setError(null);
     setLoadingForecast(true);
     try {
-      const result = await runForecast311(featured.rows);
+      const firstRow = featured.rows[0];
+      if (!firstRow) {
+        throw new Error("No rows in featured dataset");
+      }
+
+      const result = await runLocalForecast(
+        {
+          releaseId: ACTIVE_RELEASE.releaseId,
+          sourceYear: ACTIVE_RELEASE.sourceYear,
+          zipcode: firstRow.zipcode,
+          complaintType: firstRow.complaint_type,
+        },
+        forecastModel
+      );
       setForecast(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Forecast request failed");
+      setError(getForecastUserMessage(err));
     } finally {
       setLoadingForecast(false);
     }
@@ -283,6 +305,12 @@ function App() {
 
         {featured ? (
           <>
+            {!isFirebaseConfigured() ? (
+              <p className="warning">
+                Firebase is not configured. Forecasts are running against local
+                mock data.
+              </p>
+            ) : null}
             <p className="meta">
               <strong>{featured.agency_name}</strong> | {featured.category} |{" "}
               <a href={featured.source_url} target="_blank" rel="noreferrer">
@@ -331,46 +359,50 @@ function App() {
             </table>
 
             <div className="controls">
+              <label htmlFor="forecast-model-select">Forecast model</label>
+              <select
+                id="forecast-model-select"
+                value={forecastModel}
+                onChange={(event) => setForecastModel(event.target.value as ForecastModelName)}
+              >
+                {FORECAST_MODELS.map((m) => (
+                  <option key={m} value={m}>
+                    {m.replace("_", " ")}
+                  </option>
+                ))}
+              </select>
               <button
                 type="button"
                 onClick={handleForecastClick}
                 disabled={loadingForecast || !featured}
               >
-                {loadingForecast ? "Predicting..." : "Predict 2026 from this data"}
+                {loadingForecast ? "Predicting..." : "Predict 2026 locally"}
               </button>
             </div>
 
             {forecast ? (
               <>
-                <h3>2026 Predictions</h3>
+                <h3>2026 Local Prediction</h3>
                 <p className="meta">
-                  Best model by RMSE:{" "}
-                  <strong>{forecast.model_comparison[0]?.model_name}</strong> | MAE:{" "}
-                  {forecast.model_comparison[0]?.mae} | RMSE:{" "}
-                  {forecast.model_comparison[0]?.rmse}
+                  <strong>{forecast.zipcode}</strong> | {forecast.complaintType} |{" "}
+                  {forecast.prediction.toFixed(2)} predicted complaints
                 </p>
-                <table className="featured-table">
-                  <thead>
-                    <tr>
-                      <th>ZIP</th>
-                      <th>Complaint Type</th>
-                      <th>2025 Actual</th>
-                      <th>2026 Predicted</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {forecast.predictions[
-                      forecast.model_comparison[0]?.model_name
-                    ]?.slice(0, 10).map((row) => (
-                      <tr key={`${row.zipcode}::${row.complaint_type}`}>
-                        <td>{row.zipcode}</td>
-                        <td>{row.complaint_type}</td>
-                        <td>{row.source_count}</td>
-                        <td>{row.predicted_count}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <p className="meta">
+                  Model: {forecast.modelName} ({forecast.modelVersion})
+                </p>
+                <details>
+                  <summary>Provenance</summary>
+                  <ul className="result-list">
+                    <li>Dataset version: {forecast.provenance.dataset_version}</li>
+                    <li>Embedding version: {forecast.provenance.embedding_version}</li>
+                    <li>Feature schema: {forecast.provenance.feature_schema_version}</li>
+                    <li>Model checksum: {forecast.provenance.model_checksum}</li>
+                    <li>Embedding checksum: {forecast.provenance.embedding_checksum}</li>
+                    <li>Firestore release: {forecast.provenance.firestore_release_id}</li>
+                    <li>Runtime: {forecast.provenance.local_runtime}</li>
+                    <li>Execution provider: {forecast.provenance.execution_provider}</li>
+                  </ul>
+                </details>
               </>
             ) : null}
           </>

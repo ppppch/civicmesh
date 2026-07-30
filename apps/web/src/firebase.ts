@@ -69,6 +69,14 @@ export async function getBearerTokenOrDevToken(): Promise<string> {
   return user.getIdToken();
 }
 
+export function getDb(): Firestore | null {
+  return db;
+}
+
+export function isFirebaseConfigured(): boolean {
+  return firebaseEnabled;
+}
+
 export async function getFeaturedDatasetFromFirestore(): Promise<FeaturedDataset | null> {
   if (!db) {
     return null;
