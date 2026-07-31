@@ -20,6 +20,104 @@ The latest CivicGrid NYC web frontend is deployed at:
 It loads the active 311 forecast release (`20260729-022708`) from Firestore and runs
 model inference locally in the browser. No backend forecast API is used.
 
+## 311 Forecast Setup & Deployment
+
+### Live deployment
+
+- **Firebase URL:** https://civicgrid-e8b69.web.app
+- **Firebase project ID:** `civicgrid-e8b69`
+- **Firestore database ID:** `nycdata`
+- **Active forecast release:** `20260729-022708`
+- **Last verified:** 2026-07-31
+- **Deployment status:** Deployed and passing CI
+
+The hosted frontend loads versioned 311 embedding records from Firestore and runs
+Random Forest, XGBoost, and LightGBM inference locally in the browser using ONNX
+Runtime Web. No backend forecast API is used at runtime.
+
+### Local development commands
+
+From the repository root:
+
+```bash
+git checkout main
+git pull origin main
+cd apps/web
+npm install
+npm test
+npm run build
+npm run dev -- --host 127.0.0.1 --port 5173
+```
+
+Open http://127.0.0.1:5173/ (or the port Vite reports if 5173 is in use).
+
+### Frontend environment variables
+
+Copy the example file and fill in values from the Firebase web-app configuration
+for project `civicgrid-e8b69`:
+
+```bash
+cp apps/web/.env.example apps/web/.env
+```
+
+Required variables in `apps/web/.env` (values omitted for security):
+
+- `VITE_FIREBASE_API_KEY`
+- `VITE_FIREBASE_AUTH_DOMAIN`
+- `VITE_FIREBASE_PROJECT_ID`
+- `VITE_FIREBASE_STORAGE_BUCKET`
+- `VITE_FIREBASE_MESSAGING_SENDER_ID`
+- `VITE_FIREBASE_APP_ID`
+
+`VITE_FIREBASE_PROJECT_ID` must be `civicgrid-e8b69`. Never commit this file or
+paste credentials into README.md.
+
+### Firestore paths used by the forecast flow
+
+- Release manifest: `forecast_releases/{release_id}/metadata/manifest`
+- Embedding records: `forecast_releases/{release_id}/embedding_records/{record_id}`
+- Active release in the frontend: `20260729-022708` (defined in
+  `apps/web/src/forecast/releaseManifest.ts`)
+
+### Real Firestore mode vs local mock mode
+
+- **Real mode:** When valid Firebase config is present, the app fetches the
+  embedding record for the selected ZIP + complaint type from the `nycdata`
+  Firestore database, validates its checksum, and runs ONNX inference.
+- **Mock mode:** Without Firebase config or if the Firestore read fails, the app
+  falls back to a small bundled mock embedding record. The featured dataset also
+  uses mock data when the local API is not running.
+
+### Deploy to Firebase Hosting
+
+```bash
+npm install -g firebase-tools
+firebase login
+firebase use civicgrid-e8b69
+./scripts/deploy_firebase.sh
+```
+
+This builds `apps/web/dist` and deploys it to Firebase Hosting. After deploying,
+open the generated URL and test the forecast flow.
+
+Deploy Firestore rules/indexes/storage only when those files have changed and
+been reviewed:
+
+```bash
+firebase deploy --only firestore:rules,firestore:indexes,storage
+```
+
+### Known limitations / blockers
+
+- The forecast ZIP-code dropdown is currently limited to `10025` and `10027` for
+  demo purposes, even though the Firestore release contains records for many more
+  ZIP codes.
+- LightGBM may predict `0.00` for some ZIP + complaint-type combinations (e.g.
+  `10027` + `heat/hot water`) while returning non-zero values for others. This
+  appears to be a model-specific behavior rather than a data-loading error.
+- The featured dataset at the top of the page falls back to mock data when the
+  local API is not running; this is separate from the 311 forecast flow.
+
 ## Simplified Product Goal
 
 The product now centers on one local-first forecasting workflow:
