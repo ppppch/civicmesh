@@ -11,6 +11,15 @@ The simplified core idea is:
 
 This repository is the implementation workspace for that final product.
 
+## Live App
+
+The latest CivicGrid NYC web frontend is deployed at:
+
+**https://civicgrid-e8b69.web.app**
+
+It loads the active 311 forecast release (`20260729-022708`) from Firestore and runs
+model inference locally in the browser. No backend forecast API is used.
+
 ## Simplified Product Goal
 
 The product now centers on one local-first forecasting workflow:
@@ -69,7 +78,7 @@ Current implementation status in this repo:
 - Monorepo with API, web app, worker simulator, mobile app, and DB migrations.
 - Local infrastructure via Docker Compose (Postgres/PostGIS, Redis, Qdrant).
 - FastAPI service with ingestion, embedding build, and publish validation endpoints.
-- Web app (Vite + React + TypeScript) with local ONNX inference, IndexedDB embedding cache, and provenance display.
+- Web app (Vite + React + TypeScript) with local ONNX inference, IndexedDB embedding cache, and provenance display, deployed to Firebase Hosting.
 - Precomputed 311 embedding records, versioned release manifest, and ONNX model artifacts for Random Forest, XGBoost, and LightGBM.
 - Deterministic job recipes plus generated job catalog (10,000+ target).
 - Firebase Hosting/Auth scaffolding and deployment scripts.
