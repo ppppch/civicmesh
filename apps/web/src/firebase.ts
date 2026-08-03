@@ -28,12 +28,8 @@ const firebaseConfig = {
 const firebaseEnabled = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId);
 const app = firebaseEnabled ? initializeApp(firebaseConfig) : null;
 const auth: Auth | null = app ? getAuth(app) : null;
-<<<<<<< Updated upstream
 const db: Firestore | null = app ? getFirestore(app) : null;
 const forecastDb: Firestore | null = app ? getFirestore(app, "nycdata") : null;
-=======
-const db: Firestore | null = app ? getFirestore(app, "nycdata") : null;
->>>>>>> Stashed changes
 const provider = auth ? new GoogleAuthProvider() : null;
 
 export function listenAuth(callback: (user: User | null) => void): () => void {

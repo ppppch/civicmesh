@@ -34,11 +34,7 @@ export type ForecastResultRecord = {
 };
 
 const DB_NAME = "civicgrid-local";
-<<<<<<< Updated upstream
-const DB_VERSION = 4;
-=======
 const DB_VERSION = 5;
->>>>>>> Stashed changes
 const EMBEDDINGS_STORE = "embeddings";
 const RUNS_STORE = "runs";
 const FORECAST_EMBEDDINGS_STORE = "forecastEmbeddings";
