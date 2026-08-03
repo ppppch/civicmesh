@@ -7,7 +7,6 @@ from src.routes.compute import router as compute_router
 from src.routes.datasets import router as datasets_router
 from src.routes.embeddings import router as embeddings_router
 from src.routes.featured import router as featured_router
-from src.routes.forecast311 import router as forecast311_router
 from src.routes.health import router as health_router
 from src.routes.ingest import router as ingest_router
 from src.routes.jobs import router as jobs_router
@@ -36,7 +35,6 @@ app.include_router(datasets_router)
 app.include_router(featured_router)
 app.include_router(jobs_router)
 app.include_router(embeddings_router)
-app.include_router(forecast311_router)
 app.include_router(compute_router)
 app.include_router(runs_router)
 

@@ -11,6 +11,7 @@ import { buildProvenance } from "./provenance";
 import type { LocalInferenceResult } from "./localInference";
 import {
   ForecastChecksumError,
+  ForecastFirestoreUnavailableError,
   ForecastInferenceError,
   ForecastModelLoadError,
   ForecastRecordNotFoundError,
@@ -161,6 +162,8 @@ describe("provenance", () => {
       modelVersion: "v1",
       modelChecksum: "sha256:model-checksum",
       executionProvider: "wasm",
+      mae: 12.3,
+      rmse: 18.4,
     };
 
     const provenance = buildProvenance(record, inference);
@@ -207,8 +210,32 @@ describe("forecastErrors getForecastUserMessage", () => {
     expect(getForecastUserMessage(error)).toContain("local prediction failed");
   });
 
+  it("returns a message for ForecastFirestoreUnavailableError", () => {
+    const error = new ForecastFirestoreUnavailableError();
+    expect(getForecastUserMessage(error)).toContain("Firestore is not configured");
+  });
+
   it("returns a fallback message for unknown errors", () => {
     expect(getForecastUserMessage("something broke")).toBe("Forecast failed. Please try again.");
+  });
+});
+
+describe("Phase 2 forecast isolation", () => {
+  it("does not import the browser embedding runtime in any forecast module", async () => {
+    const modules = [
+      await import("./embeddingDecoder"),
+      await import("./featureBuilder"),
+      await import("./firestoreEmbeddingRepository"),
+      await import("./forecastErrors"),
+      await import("./forecastService"),
+      await import("./localInference"),
+      await import("./modelRegistry"),
+      await import("./provenance"),
+      await import("./releaseManifest"),
+    ];
+    for (const mod of modules) {
+      expect(mod).not.toHaveProperty("embedText");
+    }
   });
 });
 

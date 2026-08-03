@@ -21,6 +21,7 @@ artifacts/
 
 # OS
 .DS_Store
+.firebase/
 civicmesh-1/
 civicmesh-1/
 civicmesh

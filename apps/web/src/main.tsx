@@ -46,6 +46,8 @@ function App() {
   const [loadingFeatured, setLoadingFeatured] = React.useState(false);
   const [forecast, setForecast] = React.useState<ForecastServiceResult | null>(null);
   const [forecastModel, setForecastModel] = React.useState<ForecastModelName>("random_forest");
+  const [selectedZip, setSelectedZip] = React.useState<string>("");
+  const [selectedComplaintType, setSelectedComplaintType] = React.useState<string>("");
   const [loadingForecast, setLoadingForecast] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -60,6 +62,22 @@ function App() {
 
     return unsubscribe;
   }, []);
+
+  React.useEffect(() => {
+    if (!featured || featured.rows.length === 0) {
+      setSelectedZip("");
+      setSelectedComplaintType("");
+      return;
+    }
+
+    const uniqueZips = Array.from(new Set(featured.rows.map((r) => r.zipcode))).sort();
+    const uniqueTypes = Array.from(new Set(featured.rows.map((r) => r.complaint_type))).sort();
+
+    setSelectedZip((prev) => (prev && uniqueZips.includes(prev) ? prev : uniqueZips[0] ?? ""));
+    setSelectedComplaintType((prev) =>
+      prev && uniqueTypes.includes(prev) ? prev : uniqueTypes[0] ?? ""
+    );
+  }, [featured]);
 
   async function handleIngestClick() {
     setError(null);
@@ -90,21 +108,16 @@ function App() {
   }
 
   async function handleForecastClick() {
-    if (!featured) return;
+    if (!selectedZip || !selectedComplaintType) return;
     setError(null);
     setLoadingForecast(true);
     try {
-      const firstRow = featured.rows[0];
-      if (!firstRow) {
-        throw new Error("No rows in featured dataset");
-      }
-
       const result = await runLocalForecast(
         {
           releaseId: ACTIVE_RELEASE.releaseId,
           sourceYear: ACTIVE_RELEASE.sourceYear,
-          zipcode: firstRow.zipcode,
-          complaintType: firstRow.complaint_type,
+          zipcode: selectedZip,
+          complaintType: selectedComplaintType,
         },
         forecastModel
       );
@@ -359,6 +372,38 @@ function App() {
             </table>
 
             <div className="controls">
+              <label htmlFor="forecast-zip-select">ZIP code</label>
+              <select
+                id="forecast-zip-select"
+                value={selectedZip}
+                onChange={(event) => setSelectedZip(event.target.value)}
+                disabled={!featured}
+              >
+                {featured
+                  ? Array.from(new Set(featured.rows.map((r) => r.zipcode))).sort().map((zip) => (
+                      <option key={zip} value={zip}>
+                        {zip}
+                      </option>
+                    ))
+                  : null}
+              </select>
+
+              <label htmlFor="forecast-type-select">Complaint type</label>
+              <select
+                id="forecast-type-select"
+                value={selectedComplaintType}
+                onChange={(event) => setSelectedComplaintType(event.target.value)}
+                disabled={!featured}
+              >
+                {featured
+                  ? Array.from(new Set(featured.rows.map((r) => r.complaint_type))).sort().map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))
+                  : null}
+              </select>
+
               <label htmlFor="forecast-model-select">Forecast model</label>
               <select
                 id="forecast-model-select"
@@ -374,7 +419,7 @@ function App() {
               <button
                 type="button"
                 onClick={handleForecastClick}
-                disabled={loadingForecast || !featured}
+                disabled={loadingForecast || !selectedZip || !selectedComplaintType}
               >
                 {loadingForecast ? "Predicting..." : "Predict 2026 locally"}
               </button>
@@ -390,15 +435,29 @@ function App() {
                 <p className="meta">
                   Model: {forecast.modelName} ({forecast.modelVersion})
                 </p>
+                <p className="meta">
+                  Build-time validation MAE: {forecast.mae.toFixed(2)} | RMSE:{" "}
+                  {forecast.rmse.toFixed(2)}
+                </p>
+                <p className="warning">
+                  Forecasts are estimates based on historical patterns and should not be
+                  used as the sole basis for policy or operational decisions. Model
+                  quality varies by ZIP code and complaint type.
+                </p>
                 <details>
                   <summary>Provenance</summary>
                   <ul className="result-list">
                     <li>Dataset version: {forecast.provenance.dataset_version}</li>
                     <li>Embedding version: {forecast.provenance.embedding_version}</li>
                     <li>Feature schema: {forecast.provenance.feature_schema_version}</li>
+                    <li>Source year: {forecast.provenance.source_year}</li>
+                    <li>Target year: {forecast.provenance.target_year}</li>
+                    <li>Model name: {forecast.provenance.model_name}</li>
+                    <li>Model version: {forecast.provenance.model_version}</li>
                     <li>Model checksum: {forecast.provenance.model_checksum}</li>
                     <li>Embedding checksum: {forecast.provenance.embedding_checksum}</li>
                     <li>Firestore release: {forecast.provenance.firestore_release_id}</li>
+                    <li>Record generated at: {forecast.provenance.generated_at}</li>
                     <li>Runtime: {forecast.provenance.local_runtime}</li>
                     <li>Execution provider: {forecast.provenance.execution_provider}</li>
                   </ul>

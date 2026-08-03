@@ -1,10 +1,11 @@
 import { doc, getDoc } from "firebase/firestore";
-import { getDb } from "../firebase";
+import { getForecastDb } from "../firebase";
 import {
   getForecastEmbeddingRecord,
   putForecastEmbeddingRecord,
 } from "../localStore";
-import type { EmbeddingRecord } from "./featureBuilder";
+import { verifyRecordChecksum, type EmbeddingRecord } from "./featureBuilder";
+import { ForecastFirestoreUnavailableError } from "./forecastErrors";
 import { MOCK_EMBEDDING_RECORD } from "./mockEmbeddingRecord";
 import { ACTIVE_RELEASE } from "./releaseManifest";
 
@@ -58,7 +59,14 @@ export async function fetchEmbeddingRecord(
 
   const cached = await getForecastEmbeddingRecord(recordId);
   if (cached && isCachedRecordValid(cached)) {
-    return cached;
+    try {
+      await verifyRecordChecksum(cached);
+      return cached;
+    } catch (err) {
+      console.warn(
+        `[forecast] Cached record ${recordId} failed checksum verification. Re-fetching.`
+      );
+    }
   }
 
   if (cached && !isCachedRecordValid(cached)) {
@@ -67,9 +75,17 @@ export async function fetchEmbeddingRecord(
     );
   }
 
-  const db = getDb();
+  const db = getForecastDb();
   if (!db) {
     // Development fallback: exercise the local inference path without Firebase.
+    // This is gated to dev builds and explicit opt-in so production never
+    // returns an unchecked mock record.
+    const allowMock =
+      import.meta.env.DEV ||
+      import.meta.env.VITE_FORECAST_MOCK_FALLBACK === "true";
+    if (!allowMock) {
+      throw new ForecastFirestoreUnavailableError();
+    }
     console.warn(
       "[forecast] Firestore is not configured. Using the development mock embedding record."
     );

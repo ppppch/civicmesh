@@ -25,6 +25,8 @@ export type ForecastServiceResult = {
   prediction: number;
   modelName: ModelName;
   modelVersion: string;
+  mae: number;
+  rmse: number;
   provenance: ReturnType<typeof buildProvenance>;
 };
 
@@ -76,6 +78,8 @@ export async function runLocalForecast(
     prediction: inference.prediction,
     modelName: inference.modelName,
     modelVersion: inference.modelVersion,
+    mae: inference.mae,
+    rmse: inference.rmse,
     provenance,
   };
 
