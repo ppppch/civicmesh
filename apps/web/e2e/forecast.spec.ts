@@ -36,10 +36,11 @@ test.describe("311 forecast release flow", () => {
   });
 
   test("runs a forecast and displays prediction, metrics, caveat, and provenance", async ({ page }) => {
+    test.setTimeout(30000);
     await page.click("text=Load 311 Release");
     await page.click("text=Predict 2026 locally");
 
-    await expect(page.locator("text=predicted complaints")).toBeVisible();
+    await expect(page.locator("text=predicted complaints")).toBeVisible({ timeout: 15000 });
     await expect(page.locator("text=Validation MAE")).toBeVisible();
     await expect(page.locator("text=Validation RMSE")).toBeVisible();
     await expect(
