@@ -46,12 +46,15 @@ cd apps/web
 npm install
 npm test
 npm run test:e2e
+npm run test:e2e:unavailable
 npm run build
 npm run dev -- --host 127.0.0.1 --port 5173
 ```
 
 `npm run test:e2e` starts a local dev server in test mode (using the bundled
 mock selector manifest) and runs Playwright against desktop and mobile viewports.
+`npm run test:e2e:unavailable` runs an additional browser test that verifies the
+app surfaces an error when Firebase is unavailable and mock fallback is disabled.
 
 Open http://127.0.0.1:5173/ (or the port Vite reports if 5173 is in use).
 
