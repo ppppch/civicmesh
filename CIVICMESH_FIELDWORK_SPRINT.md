@@ -1,14 +1,24 @@
-# CivicMesh Fieldwork Sprint
+# CivicMesh One-Week Fieldwork Sprint
 
 Week of: 2026-08-04
 Time commitment: 25 hours per intern
 Schedule: 5 hours per day for 5 days
+Deadline: Friday at the end of the assigned week
+
+## One-Week Assignment
+
+This brief covers one workweek only. Each intern completes one assigned track during the same Monday-to-Friday week; no intern is expected to complete all three tracks.
+
+- With three interns, assign Tracks A, B, and C in parallel.
+- With one or two interns, the supervisor chooses the highest-priority track or tracks before Monday.
+- All code, research, evidence, and handoff materials are due by Friday.
+- Work that does not fit within the 25-hour limit must be documented as follow-up work instead of carried into this week's scope.
 
 ## Goal For The Week
 
 Move the deployed 311 forecasting workflow toward a reliable public release. The local ONNX forecast works, but the live selector currently falls back to a small mock dataset, model quality needs stronger evidence, and browser release coverage is missing.
 
-Each intern should be assigned one track below. Every track totals exactly 25 hours and ends with a reviewed pull request or research report. Do not combine unfinished pieces from multiple tracks.
+Every track below totals exactly 25 hours and ends with a reviewed pull request or research report. Interns should finish their assigned track before starting work from another track.
 
 ## Current Starting Point
 
