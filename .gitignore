@@ -22,6 +22,17 @@ artifacts/
 # OS
 .DS_Store
 .firebase/
+
+# Prevent accidental personal media at the repository root
+/*.pdf
+/*.png
+/*.jpg
+/*.jpeg
+/*.gif
+/*.webp
+/*.ico
+/*.icns
+
 civicmesh-1/
 civicmesh-1/
 civicmesh
