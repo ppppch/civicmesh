@@ -1,6 +1,20 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import {
+  Activity,
+  ArrowUpRight,
+  BrainCircuit,
+  Cloud,
+  Database,
+  LogIn,
+  LogOut,
+  MapPin,
+  RefreshCw,
+  Search,
+  ShieldCheck,
+  Upload,
+} from "lucide-react";
+import {
   getFeaturedDataset,
   publishRun,
   runCatalogIngest,
@@ -50,6 +64,7 @@ function App() {
   const [selectedComplaintType, setSelectedComplaintType] = React.useState<string>("");
   const [loadingForecast, setLoadingForecast] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const featuredIsMock = featured?.dataset_id.includes("mock") ?? false;
 
   React.useEffect(() => {
     listRuns(5)
@@ -204,35 +219,71 @@ function App() {
   }
 
   return (
-    <main className="app">
-      <header>
-        <h1>CivicGrid NYC</h1>
-        <p>Ask NYC. Contribute compute. Publish reproducible insight cards.</p>
-        <div className="controls">
+    <main className="app" id="top">
+      <header className="app-header">
+        <div className="topbar">
+          <a className="brand" href="#top" aria-label="CivicGrid NYC home">
+            <span className="brand-mark" aria-hidden="true">
+              <MapPin size={20} strokeWidth={2.4} />
+            </span>
+            <span>CivicGrid <strong>NYC</strong></span>
+          </a>
+          <nav className="workspace-nav" aria-label="Workspace navigation">
+            <a href="#ask">Dataset search</a>
+            <a href="#forecast">Forecast</a>
+            <a href="#system">System</a>
+          </nav>
+          <div className="auth-controls">
           {authEmail ? (
             <>
-              <span className="status">Signed in: {authEmail}</span>
-              <button type="button" onClick={() => void signOutUser()}>
+              <span className="account-label">{authEmail}</span>
+              <button className="button-secondary" type="button" onClick={() => void signOutUser()}>
+                <LogOut size={16} aria-hidden="true" />
                 Sign out
               </button>
             </>
           ) : (
-            <button type="button" onClick={() => void signInWithGoogle()}>
+            <button className="button-secondary" type="button" onClick={() => void signInWithGoogle()}>
+              <LogIn size={16} aria-hidden="true" />
               Sign in with Google
             </button>
           )}
-          <span className="status">{publishStatus}</span>
+          </div>
+        </div>
+
+        <div className="masthead">
+          <div className="masthead-copy">
+            <p className="eyebrow">Local-first civic forecasting</p>
+            <h1>See where 311 demand may move next.</h1>
+            <p>
+              Explore complaint patterns by ZIP code and compare three models,
+              with every prediction computed on this device.
+            </p>
+          </div>
+          <div className="release-strip" aria-label="Active release status">
+            <span><Activity size={15} aria-hidden="true" /> Active release</span>
+            <strong>{ACTIVE_RELEASE.releaseId}</strong>
+            <span><ShieldCheck size={15} aria-hidden="true" /> {publishStatus}</span>
+          </div>
         </div>
       </header>
 
-      <section className="panel">
-        <h2>Ask NYC (Live API)</h2>
-        <p>
-          Step 1: ingest top NYC datasets. Step 2: run required local WebGPU embedding compute.
-          Step 3: search and locally rerank relevant datasets.
+      {error ? <p className="global-alert" role="alert">{error}</p> : null}
+
+      <section className="panel ask-panel" id="ask">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Open data discovery</p>
+            <h2>Ask NYC datasets</h2>
+          </div>
+          <span className="status-chip"><BrainCircuit size={15} aria-hidden="true" /> Browser compute</span>
+        </div>
+        <p className="section-intro">
+          Search the NYC catalog and rerank results locally with a browser embedding model.
         </p>
         <div className="controls">
           <button type="button" onClick={handleIngestClick} disabled={loadingIngest}>
+            <RefreshCw size={16} aria-hidden="true" />
             {loadingIngest ? "Ingesting..." : "Ingest NYC Catalog"}
           </button>
           <span className="status">{ingestStatus}</span>
@@ -260,12 +311,11 @@ function App() {
         </select>
         <div className="controls">
           <button type="button" onClick={handleSearchClick} disabled={loadingSearch}>
+            <Search size={16} aria-hidden="true" />
             {loadingSearch ? "Computing + Searching..." : "Run Local GPU Compute + Find Datasets"}
           </button>
           <span className="status">{localComputeStatus}</span>
         </div>
-
-        {error ? <p className="error">{error}</p> : null}
 
         <ul className="result-list">
           {results.map((row) => (
@@ -277,7 +327,7 @@ function App() {
               </p>
               <p className="meta">Local embedding score: {(row as DatasetSearchResult & { local_score?: number }).local_score?.toFixed(4) ?? "n/a"}</p>
               <a href={row.source_url} target="_blank" rel="noreferrer">
-                Open dataset API
+                Open dataset API <ArrowUpRight size={14} aria-hidden="true" />
               </a>
             </li>
           ))}
@@ -292,6 +342,7 @@ function App() {
                 {run.model} | {new Date(run.createdAt).toLocaleString()}
               </p>
               <button type="button" onClick={() => void handlePublish(run)}>
+                <Upload size={16} aria-hidden="true" />
                 Publish to Firebase-backed API
               </button>
             </li>
@@ -299,15 +350,24 @@ function App() {
         </ul>
       </section>
 
-      <section className="panel">
-        <h2>Featured Dataset: 311 Complaints by ZIP (2020-2025)</h2>
-        <p>
-          Pre-loaded sample of NYC 311 heat/hot-water and street-condition complaints
-          grouped by ZIP code and year. Safe for offline demos.
+      <section className="panel forecast-panel" id="forecast">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">2026 outlook</p>
+            <h2>311 forecast workspace</h2>
+          </div>
+          <span className={`status-chip ${featuredIsMock ? "status-chip-warning" : "status-chip-live"}`}>
+            <Database size={15} aria-hidden="true" />
+            {featured ? (featuredIsMock ? "Mock selector data" : "Live selector data") : "Dataset not loaded"}
+          </span>
+        </div>
+        <p className="section-intro">
+          Compare heat and street-condition complaint forecasts by ZIP using the active 2025 release.
         </p>
         <div className="controls">
           <button type="button" onClick={handleLoadFeaturedClick} disabled={loadingFeatured}>
-            {loadingFeatured ? "Loading..." : "Load Featured Dataset"}
+            <Database size={16} aria-hidden="true" />
+            {loadingFeatured ? "Loading..." : "Load 311 Dataset"}
           </button>
           {featured ? (
             <span className="status">
@@ -318,10 +378,11 @@ function App() {
 
         {featured ? (
           <>
-            {!isFirebaseConfigured() ? (
+            {!isFirebaseConfigured() || featuredIsMock ? (
               <p className="warning">
-                Firebase is not configured. Forecasts are running against local
-                mock data.
+                {featuredIsMock
+                  ? "Selector options are using the bundled demo sample. Forecast records still load from Firestore when Firebase is configured."
+                  : "Firebase is not configured. Forecasts are running against local mock data."}
               </p>
             ) : null}
             <p className="meta">
@@ -330,8 +391,9 @@ function App() {
                 Open source dataset
               </a>
             </p>
-            <table className="featured-table">
-              <thead>
+            <div className="table-scroll" role="region" aria-label="311 complaint history" tabIndex={0}>
+              <table className="featured-table">
+                <thead>
                 <tr>
                   <th>ZIP</th>
                   <th>Complaint Type</th>
@@ -339,8 +401,8 @@ function App() {
                     <th key={year}>{year}</th>
                   ))}
                 </tr>
-              </thead>
-              <tbody>
+                </thead>
+                <tbody>
                 {Array.from(
                   new Map(
                     featured.rows.map((r) => [
@@ -368,77 +430,80 @@ function App() {
                     </tr>
                   );
                 })}
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </div>
 
-            <div className="controls">
-              <label htmlFor="forecast-zip-select">ZIP code</label>
-              <select
-                id="forecast-zip-select"
-                value={selectedZip}
-                onChange={(event) => setSelectedZip(event.target.value)}
-                disabled={!featured}
-              >
-                {featured
-                  ? Array.from(new Set(featured.rows.map((r) => r.zipcode))).sort().map((zip) => (
-                      <option key={zip} value={zip}>
-                        {zip}
-                      </option>
-                    ))
-                  : null}
-              </select>
+            <div className="forecast-controls">
+              <div className="control-field">
+                <label htmlFor="forecast-zip-select">ZIP code</label>
+                <select
+                  id="forecast-zip-select"
+                  value={selectedZip}
+                  onChange={(event) => setSelectedZip(event.target.value)}
+                  disabled={!featured}
+                >
+                  {Array.from(new Set(featured.rows.map((r) => r.zipcode))).sort().map((zip) => (
+                    <option key={zip} value={zip}>{zip}</option>
+                  ))}
+                </select>
+              </div>
 
-              <label htmlFor="forecast-type-select">Complaint type</label>
-              <select
-                id="forecast-type-select"
-                value={selectedComplaintType}
-                onChange={(event) => setSelectedComplaintType(event.target.value)}
-                disabled={!featured}
-              >
-                {featured
-                  ? Array.from(new Set(featured.rows.map((r) => r.complaint_type))).sort().map((type) => (
-                      <option key={type} value={type}>
-                        {type}
-                      </option>
-                    ))
-                  : null}
-              </select>
+              <div className="control-field">
+                <label htmlFor="forecast-type-select">Complaint type</label>
+                <select
+                  id="forecast-type-select"
+                  value={selectedComplaintType}
+                  onChange={(event) => setSelectedComplaintType(event.target.value)}
+                  disabled={!featured}
+                >
+                  {Array.from(new Set(featured.rows.map((r) => r.complaint_type))).sort().map((type) => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
 
-              <label htmlFor="forecast-model-select">Forecast model</label>
-              <select
-                id="forecast-model-select"
-                value={forecastModel}
-                onChange={(event) => setForecastModel(event.target.value as ForecastModelName)}
-              >
-                {FORECAST_MODELS.map((m) => (
-                  <option key={m} value={m}>
-                    {m.replace("_", " ")}
-                  </option>
-                ))}
-              </select>
+              <div className="control-field">
+                <label htmlFor="forecast-model-select">Forecast model</label>
+                <select
+                  id="forecast-model-select"
+                  value={forecastModel}
+                  onChange={(event) => setForecastModel(event.target.value as ForecastModelName)}
+                >
+                  {FORECAST_MODELS.map((m) => (
+                    <option key={m} value={m}>{m.replace("_", " ")}</option>
+                  ))}
+                </select>
+              </div>
               <button
+                className="forecast-action"
                 type="button"
                 onClick={handleForecastClick}
                 disabled={loadingForecast || !selectedZip || !selectedComplaintType}
               >
+                <BrainCircuit size={18} aria-hidden="true" />
                 {loadingForecast ? "Predicting..." : "Predict 2026 locally"}
               </button>
             </div>
 
             {forecast ? (
-              <>
-                <h3>2026 Local Prediction</h3>
-                <p className="meta">
-                  <strong>{forecast.zipcode}</strong> | {forecast.complaintType} |{" "}
-                  {forecast.prediction.toFixed(2)} predicted complaints
-                </p>
-                <p className="meta">
-                  Model: {forecast.modelName} ({forecast.modelVersion})
-                </p>
-                <p className="meta">
-                  Build-time validation MAE: {forecast.mae.toFixed(2)} | RMSE:{" "}
-                  {forecast.rmse.toFixed(2)}
-                </p>
+              <div className="forecast-result" aria-live="polite">
+                <div className="result-heading">
+                  <div>
+                    <p className="eyebrow">2026 local prediction</p>
+                    <h3>{forecast.zipcode} · {forecast.complaintType}</h3>
+                  </div>
+                  <span className="status-chip status-chip-live"><Activity size={15} aria-hidden="true" /> Complete</span>
+                </div>
+                <div className="prediction-value">
+                  <strong>{forecast.prediction.toFixed(0)}</strong>
+                  <span>predicted complaints</span>
+                </div>
+                <div className="metric-grid">
+                  <div><span>Model</span><strong>{forecast.modelName.replace("_", " ")}</strong></div>
+                  <div><span>Validation MAE</span><strong>{forecast.mae.toFixed(2)}</strong></div>
+                  <div><span>Validation RMSE</span><strong>{forecast.rmse.toFixed(2)}</strong></div>
+                </div>
                 <p className="warning">
                   Forecasts are estimates based on historical patterns and should not be
                   used as the sole basis for policy or operational decisions. Model
@@ -462,25 +527,24 @@ function App() {
                     <li>Execution provider: {forecast.provenance.execution_provider}</li>
                   </ul>
                 </details>
-              </>
+              </div>
             ) : null}
           </>
         ) : null}
       </section>
 
-      <section className="grid">
-        <article className="card">
-          <h2>Ask NYC</h2>
-          <p>Natural-language civic analysis over NYC Open Data.</p>
-        </article>
-        <article className="card">
-          <h2>Civic Compute</h2>
-          <p>Simulated local workers contribute verified analysis work-units.</p>
-        </article>
-        <article className="card">
-          <h2>Insight Atlas</h2>
-          <p>Queryable, cited, and reproducible public insight cards.</p>
-        </article>
+      <section className="system-band" id="system">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">System map</p>
+            <h2>Local by design</h2>
+          </div>
+        </div>
+        <div className="system-grid">
+          <div><Database size={20} aria-hidden="true" /><span><strong>NYC Open Data</strong>Versioned source records</span></div>
+          <div><BrainCircuit size={20} aria-hidden="true" /><span><strong>On-device models</strong>Browser ONNX inference</span></div>
+          <div><Cloud size={20} aria-hidden="true" /><span><strong>Firebase</strong>Artifacts and provenance</span></div>
+        </div>
       </section>
     </main>
   );
