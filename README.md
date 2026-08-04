@@ -45,9 +45,13 @@ git pull origin main
 cd apps/web
 npm install
 npm test
+npm run test:e2e
 npm run build
 npm run dev -- --host 127.0.0.1 --port 5173
 ```
+
+`npm run test:e2e` starts a local dev server in test mode (using the bundled
+mock selector manifest) and runs Playwright against desktop and mobile viewports.
 
 Open http://127.0.0.1:5173/ (or the port Vite reports if 5173 is in use).
 
@@ -81,12 +85,23 @@ paste credentials into README.md.
 
 ### Real Firestore mode vs local mock mode
 
-- **Real mode:** When valid Firebase config is present, the app fetches the
-  embedding record for the selected ZIP + complaint type from the `nycdata`
-  Firestore database, validates its checksum, and runs ONNX inference.
-- **Mock mode:** Without Firebase config or if the Firestore read fails, the app
-  falls back to a small bundled mock embedding record. The featured dataset also
-  uses mock data when the local API is not running.
+- **Selector real mode:** When valid Firebase config is present, the app reads the
+  active release manifest from `forecast_releases/{release_id}/metadata/manifest`
+  in the `nycdata` Firestore database. If the manifest contains a `combinations`
+  list, it is used to populate the ZIP and complaint-type controls. If not, the
+  app derives the valid combinations from the release's `embedding_records`
+  collection.
+- **Selector mock mode:** Without Firebase config, or if the selector manifest is
+  unavailable and `VITE_FORECAST_MOCK_FALLBACK=true` (or the app is running in
+  development mode), the controls fall back to a small bundled mock manifest.
+  Production builds with Firebase configured never silently show mock selector
+  data as live data.
+- **Forecast real mode:** When valid Firebase config is present, the app fetches
+  the embedding record for the selected ZIP + complaint type from the `nycdata`
+  Firestore database, validates its checksum, and runs ONNX inference locally.
+- **Forecast mock mode:** Without Firebase config or if the Firestore read fails,
+  the forecast falls back to a small bundled mock embedding record only when
+  `VITE_FORECAST_MOCK_FALLBACK=true` or in development mode.
 
 ### Deploy to Firebase Hosting
 
@@ -109,14 +124,17 @@ firebase deploy --only firestore:rules,firestore:indexes,storage
 
 ### Known limitations / blockers
 
-- The forecast ZIP-code dropdown is currently limited to `10025` and `10027` for
-  demo purposes, even though the Firestore release contains records for many more
-  ZIP codes.
 - LightGBM may predict `0.00` for some ZIP + complaint-type combinations (e.g.
   `10027` + `heat/hot water`) while returning non-zero values for others. This
   appears to be a model-specific behavior rather than a data-loading error.
-- The featured dataset at the top of the page falls back to mock data when the
-  local API is not running; this is separate from the 311 forecast flow.
+
+### Resolved this week
+
+- The forecast ZIP-code and complaint-type controls now load valid combinations
+  from the active Firestore release manifest instead of a two-ZIP demo sample.
+- The selector no longer falls back to `http://localhost:8000` in production.
+  Mock data is restricted to development/test mode via
+  `VITE_FORECAST_MOCK_FALLBACK=true` or when Firebase is unconfigured.
 
 ## Simplified Product Goal
 

@@ -344,6 +344,10 @@ def build_release_artifacts(
         "target_year": max(source_years) + 1,
         "record_count": len(records),
         "records_path": str(records_path),
+        "combinations": [
+            {"zipcode": r["zipcode"], "complaint_type": r["complaint_type"]}
+            for r in records
+        ],
         "generated_at": datetime.now(tz=UTC).isoformat(),
     }
 
