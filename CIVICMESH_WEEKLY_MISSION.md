@@ -1,4 +1,4 @@
-# CivicMesh One-Week Fieldwork Sprint
+# CivicMesh Weekly Mission
 
 Week of: 2026-08-04
 Time commitment: 25 hours per intern
