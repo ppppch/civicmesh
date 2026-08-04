@@ -1,7 +1,6 @@
 # CivicMesh Weekly Mission
 
 Week of: 2026-08-04
-Time commitment: 25 hours per intern
 Deadline: Friday at the end of the assigned week
 
 ## One-Week Assignment
@@ -103,7 +102,7 @@ Expected result: reviewed work that another contributor can reproduce and contin
 
 1. Create a branch from current `main`; do not commit directly to `main`.
 2. Keep commits focused and use a pull request for review.
-3. Record weekly time and raise scope problems before exceeding 25 hours.
+3. Raise scope problems early and document unfinished work as follow-up tasks.
 4. Add tests for changed behavior and include the commands run in the pull request.
 5. Do not deploy Firebase, alter Firestore rules, publish a release, or rotate dependencies without supervisor approval.
 6. Do not use production service-account credentials or include secrets in screenshots, logs, issues, or commits.
@@ -114,10 +113,10 @@ Expected result: reviewed work that another contributor can reproduce and contin
 
 Use this checklist for each intern:
 
-- Actual hours total 25 or less.
+- Assigned work stayed within the agreed weekly scope.
 - Required artifact or pull request is linked.
 - Tests and build results are included.
 - Research claims are supported by data or source references.
 - No credentials, environment files, or generated artifacts are committed.
 - Remaining risks and decisions are stated plainly.
-- The next task is small enough for another 25-hour week.
+- The next task is small enough for the following week.
