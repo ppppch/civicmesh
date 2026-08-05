@@ -240,6 +240,21 @@ dist/assets/index-Ce5Ued16.js                           1,894.02 kB │ gzip: 47
 
 A full runtime performance profile (cold vs warm inference, model load times) was not completed in this review and should be follow-up work.
 
+### 6.4 Forecast Runtime Path Verification
+
+The 311 forecast flow was verified to use only local inference and Firestore reads:
+
+| Step | Source | Network Target | Local Compute? |
+|------|--------|----------------|----------------|
+| Fetch embedding record | `firestoreEmbeddingRepository.ts` | Firebase Firestore (`nycdata`) | No |
+| Load model artifacts | `modelRegistry.ts` | Same-origin static files (`/models/forecast311/v1/`) | No |
+| Run inference | `localInference.ts` | None — ONNX Runtime Web in browser | **Yes** |
+| Build provenance | `provenance.ts` | None | **Yes** |
+
+**No `localhost:8000` backend calls are made during forecast inference.**
+
+Note: the separate "Ask NYC" dataset search feature in `apps/web/src/api.ts` still calls `http://localhost:8000` for catalog ingest and dataset search. That path is unrelated to the forecast flow.
+
 ---
 
 ## 7. Recommendation
@@ -262,6 +277,7 @@ A full runtime performance profile (cold vs warm inference, model load times) wa
 4. XGBoost overfitting should be investigated further by examining the training script and hyperparameters.
 5. A rolling year-pair backtest would strengthen the model comparison if historical data is available.
 6. A full runtime performance profile (cold vs warm inference, model load times) was not completed and should be follow-up work.
+7. Rolling year-pair backtests were not completed because they require retraining models on historical year-pairs; this should be follow-up work if historical training data is available.
 
 ---
 
