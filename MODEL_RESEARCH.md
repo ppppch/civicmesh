@@ -149,13 +149,96 @@ Without actual 2026 ground-truth data, it is impossible to declare one model uni
 
 ---
 
-## 6. Security and Performance Observations (Preliminary)
+## 5.5 Hash-Embedding Ablation
 
-- `npm audit` reported vulnerabilities in `apps/web`. These have not been auto-fixed pending supervisor approval.
-- The production build produces large JS/WASM chunks (ONNX Runtime files are ~13–27 MB). This is expected but may impact first load on slow connections.
-- Firebase reads use the public `nycdata` database. No service-account credentials are used in the frontend.
+A separate ablation study (`scripts/embedding_ablation.py`) ran each model twice per record:
 
-A full security and performance review is still in progress.
+1. **Full vector**: counts + trends + 32-dimensional hash embedding
+2. **No embedding**: counts + trends + 32 zeros
+
+### Notable results
+
+| Combination | Model | Full Prediction | No Embedding | % Change |
+|-------------|-------|----------------:|-------------:|---------:|
+| 10000 / HEAT/HOT WATER | lightgbm | 29.06 | 3.70 | **+685%** |
+| 10003 / HEAT/HOT WATER | xgboost | 889.13 | 1384.25 | **−35.8%** |
+| 10003 / HEAT/HOT WATER | random_forest | 972.20 | 1291.16 | **−24.7%** |
+| 10025 / heat/hot water | xgboost | 1626.91 | 1960.11 | **−17.0%** |
+
+### Interpretation
+
+- The hash embedding is **not noise**. Removing it changes predictions substantially in many cases.
+- **XGBoost is the most sensitive** to the embedding, with changes up to −35.8%.
+- **LightGBM shows the most extreme relative change** for low-volume records (10000: +685%), but this is partly because the baseline prediction without embedding is very small (3.70).
+- In a few cases (e.g., 10025 Street Condition with XGBoost), the embedding has almost no effect (+0.6%).
+
+This suggests the embedding carries meaningful signal for the models, but its influence is inconsistent across ZIP codes, complaint types, and model variants.
+
+---
+
+## 6. Security and Performance Review
+
+### 6.1 npm Audit Findings
+
+Command run:
+
+```bash
+cd apps/web
+npm audit
+```
+
+Result:
+
+```text
+18 vulnerabilities (10 moderate, 6 high, 2 critical)
+```
+
+| Severity | Package | Impact | Affected Path |
+|----------|---------|--------|---------------|
+| Critical | protobufjs | Arbitrary code execution, code injection, DoS | onnxruntime-web → @xenova/transformers |
+| Critical | websocket-driver | Resource limit bypass, message corruption | Firebase realtime features |
+| High | sharp | libvips CVEs | @xenova/transformers |
+| High | undici | HTTP/WebSocket smuggling, DoS, header injection | firebase → @firebase/auth/firestore/functions/storage |
+| Moderate | esbuild | Dev-server CORS issue | vite (build-time only) |
+
+### Why these are not auto-fixed
+
+Running `npm audit fix --force` would upgrade:
+
+- Vite to 8.x (breaking)
+- Firebase to 12.x (breaking)
+- @xenova/transformers to 1.4.2 (breaking)
+
+Project rules require supervisor approval before rotating dependencies. These upgrades should be reviewed and tested in a separate PR.
+
+### Risk assessment
+
+- **esbuild** is a build-time dependency. The vulnerability only affects the Vite dev server, not production users.
+- **protobufjs, sharp, undici, websocket-driver** are runtime dependencies used by the ONNX runtime, transformers library, and Firebase SDK. These affect deployed users and should be prioritized.
+- No production service-account credentials are used in the frontend. Firebase reads rely on public Firestore rules and the web API key.
+
+### 6.2 Performance Observations
+
+Production build output:
+
+```text
+dist/assets/ort-wasm-simd-threaded.jsep-DC5y_g6C.wasm  26,827.54 kB
+dist/assets/index-C54EUSRM.css                              2.13 kB │ gzip:   0.89 kB
+dist/assets/index-Ce5Ued16.js                           1,894.02 kB │ gzip: 472.77 kB
+```
+
+- The ONNX Runtime WebAssembly file is **~26 MB**, which is large for mobile or slow connections.
+- The main JavaScript bundle is **~1.9 MB** (~472 kB gzipped).
+- Vite warns that some chunks exceed 500 kB after minification.
+
+### 6.3 Recommendations
+
+1. **Dependency upgrades:** Schedule supervised upgrades for Firebase, Vite, and @xenova/transformers.
+2. **WASM loading:** Consider lazy-loading ONNX Runtime only when the forecast tab is used.
+3. **Bundle splitting:** Use dynamic imports to split the application and reduce initial load.
+4. **Latency budget:** Target < 3 seconds to first meaningful paint on a 4G connection.
+
+A full runtime performance profile (cold vs warm inference, model load times) was not completed in this review and should be follow-up work.
 
 ---
 
@@ -174,10 +257,11 @@ A full security and performance review is still in progress.
 ## 8. Open Questions and Risks
 
 1. We do not have actual 2026 complaint counts, so all model comparisons are against baselines, not ground truth.
-2. The embedding is a deterministic hash of zipcode + complaint type. Its contribution to predictions has not been fully ablated.
+2. The hash-embedding ablation shows the embedding influences predictions, but the direction and magnitude are inconsistent across models and records. A deeper feature-importance analysis would help.
 3. The `trend_features` definition was found in `feature-schema.json`; the frontend code should reference this schema explicitly to avoid confusion.
 4. XGBoost overfitting should be investigated further by examining the training script and hyperparameters.
 5. A rolling year-pair backtest would strengthen the model comparison if historical data is available.
+6. A full runtime performance profile (cold vs warm inference, model load times) was not completed and should be follow-up work.
 
 ---
 
@@ -209,6 +293,9 @@ Note: The 5 passing tests are the existing forecast module unit tests in `apps/w
 # Baseline comparison script
 uv run --project apps/api python scripts/baseline_comparison.py
 
+# Hash-embedding ablation study
+uv run --project apps/api python scripts/embedding_ablation.py
+
 # Model parity validation
 uv run --project apps/api python scripts/validate_forecast311_parity.py
 
@@ -221,6 +308,7 @@ uv run --project apps/api python scripts/validate_forecast_records.py
 ## 10. Files Added or Modified
 
 - `scripts/baseline_comparison.py` — compares ONNX predictions to baselines
+- `scripts/embedding_ablation.py` — measures the effect of the hash embedding
 - `scripts/validate_forecast311_parity.py` — validates model outputs against parity fixtures
 - `scripts/validate_forecast_records.py` — validates Firestore record shape and checksums
 - `MODEL_RESEARCH.md` — this report
